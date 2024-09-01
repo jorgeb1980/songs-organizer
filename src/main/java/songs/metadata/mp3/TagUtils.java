@@ -1,30 +1,16 @@
 package songs.metadata.mp3;
 
-import org.mozilla.intl.chardet.nsDetector;
+import songs.files.Utils;
 
-import static songs.files.Utils.slice;
 import static java.nio.charset.StandardCharsets.ISO_8859_1;
 import static java.nio.charset.StandardCharsets.UTF_16LE;
-
-import java.nio.charset.Charset;
+import static songs.files.Utils.slice;
 
 class TagUtils {
 
 	public static String readField(byte[] field) {
-		var encoding = retrieveCharset(field);
-		return decodeAndTrim(slice(field, 1, field.length - 1), encoding);
-	}
-	
-	private static Charset retrieveCharset(byte[] string) {
-		var detector = new nsDetector();
-		detector.DoIt(string, string.length, false);
-		detector.DataEnd();
-		return Charset.forName(detector.getProbableCharsets()[0]);
-	}
-	
-	public static String decodeAndTrim(byte[] field, Charset encoding) {
-		// Removes padding
-		return new String(field, encoding).trim().replaceAll("[\\p{Cf}]", "");
+		var encoding = Utils.retrieveCharset(field);
+		return Utils.decodeAndTrim(slice(field, 1, field.length - 1), encoding);
 	}
     
     /* https://id3.org/id3v2.3.0#Comments -
@@ -34,13 +20,13 @@ class TagUtils {
     	There may be more than one comment frame in each tag, but only one with the same language and content descriptor.
     */
     public static String retrieveExtendedText(byte[] data) {
-        var encoding = retrieveCharset(data);
+        var encoding = Utils.retrieveCharset(data);
         // Discard header of the data
         var buffer = slice(data, 4, data.length - 4);
         int index = 0;
         if (encoding == ISO_8859_1) index = findLastDescriptorIndex(buffer);
         else if (encoding == UTF_16LE) index = findSecondBOMIndex(buffer);
-        return decodeAndTrim(slice(buffer, index, buffer.length - index), encoding);
+        return Utils.decodeAndTrim(slice(buffer, index, buffer.length - index), encoding);
     }
 
 	private static int findSecondBOMIndex(byte[] buffer) {

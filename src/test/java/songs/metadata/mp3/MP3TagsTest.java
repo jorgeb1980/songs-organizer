@@ -5,14 +5,14 @@ import songs.metadata.mp3.models.V1Tag;
 import songs.metadata.mp3.models.V2Tag;
 
 import java.io.File;
-import java.io.RandomAccessFile;
+import java.io.IOException;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.fail;
 import static test.Sandbox.sandbox;
 
-public class BasicTagsTest {
+public class MP3TagsTest {
 
     private void testV1(File f, String artist, String title) {
         testV1(f, artist, title, "");
@@ -20,9 +20,9 @@ public class BasicTagsTest {
 
     private void testV1(File f, String artist, String title, String year) {
         V1Tag tag = null;
-        try (var raf = new RandomAccessFile(f, "r")) {
-            tag = V1TagService.buildTag(raf);
-        } catch (Exception e) {
+        try {
+            tag = V1TagService.buildTag(f);
+        } catch (IOException e) {
             fail(e);
         }
         assertEquals(title, tag.title());
@@ -31,19 +31,20 @@ public class BasicTagsTest {
     }
 
     private void testV2(File f, String artist, String title) {
-        testV2(f, artist, title, null);
+        testV2(f, artist, title, null, null);
     }
 
-    private void testV2(File f, String artist, String title, String year) {
+    private void testV2(File f, String artist, String title, String year, String comments) {
         V2Tag tag = null;
-        try (var raf = new RandomAccessFile(f, "r")) {
-            tag = V2TagService.buildTag(raf);
-        } catch (Exception e) {
+        try {
+            tag = V2TagService.buildTag(f);
+        } catch (IOException e) {
             fail(e);
         }
         assertEquals(title, tag.title());
         assertEquals(artist, tag.artist());
         assertEquals(year, tag.year());
+        assertEquals(comments, tag.comments());
     }
 
     @Test
@@ -54,7 +55,7 @@ public class BasicTagsTest {
             var song1 = sb.copyResource("mp3/recording_tags_1.mp3");
             // v2 - paco - a test - 2024
             var song2 = sb.copyResource("mp3/recording_tags_2.mp3");
-            // v2 - pepe - song 1
+            // v2 - pepe - song 1 ; comment: áéíóú
             var song3 = sb.copyResource("mp3/recording_tags_3.mp3");
             // v1 - pepe - song 2
             var song4 = sb.copyResource("mp3/recording_tags_4.mp3");
@@ -68,8 +69,8 @@ public class BasicTagsTest {
             var song8 = sb.copyResource("mp3/recording_tags_8.mp3");
 
             testV1(song1, "tester", "test", "2024");
-            testV2(song2, "paco", "a test", "2024");
-            testV2(song3, "pepe", "song 1");
+            testV2(song2, "paco", "a test", "2024", null);
+            testV2(song3, "pepe", "song 1", null, "áéíóú");
             testV1(song4, "pepe", "song 2");
             testV2(song5, "cataphracts", "another song");
             testV2(song6, "the cataphracts", "main song");
@@ -111,16 +112,16 @@ public class BasicTagsTest {
     }
 
     private void assertNotV2(File f) {
-        try (var raf = new RandomAccessFile(f, "r")) {
-            assertNull(V2TagService.buildTag(raf));
+        try {
+            assertNull(V2TagService.buildTag(f));
         } catch (Exception e) {
             fail(e);
         }
     }
 
     private void assertNotV1(File f) {
-        try (var raf = new RandomAccessFile(f, "r")) {
-            assertNull(V1TagService.buildTag(raf));
+        try {
+            assertNull(V1TagService.buildTag(f));
         } catch (Exception e) {
             fail(e);
         }

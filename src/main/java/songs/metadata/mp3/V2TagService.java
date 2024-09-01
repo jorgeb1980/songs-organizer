@@ -18,6 +18,7 @@ import static songs.metadata.mp3.Constants.ALBUM;
 import static songs.metadata.mp3.TagUtils.readField;
 import static songs.metadata.mp3.TagUtils.retrieveExtendedText;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.util.Arrays;
@@ -54,31 +55,33 @@ public class V2TagService {
 
 	private V2TagService() {}
 
-	public static V2Tag buildTag(RandomAccessFile raf) throws IOException {
+	public static V2Tag buildTag(File file) throws IOException {
 		V2Tag ret = null;
-		// Get the file start (only to tell if this is the right format)
-		var buffer = new byte[START_SIZE_BYTES];
-		raf.read(buffer, 0, START_SIZE_BYTES);
-		if (buffer[0] == ID3[0] && buffer[1] == ID3[1] && buffer[2] == ID3[2]) {
-			var ctx = new TranslationContext();
-			var headerBuffer = new byte[HEADER_TOTAL_SIZE_BYTES];
-			raf.read(headerBuffer, 0, HEADER_TOTAL_SIZE_BYTES);
-			var header = buildHeader(headerBuffer, ctx);
-			if (header != null) {
-				long remaining = header.translatedSize();
-				boolean keepOn = readFrame(raf, ctx);
-				while (keepOn) {
-					try {
-						// Keep on until there are no more frames or we are past the total
-						//	declared size
-						keepOn = readFrame(raf, ctx) && (ctx.accumulated() < remaining);
-					} catch (Error e) {
-						e.printStackTrace();
-						System.err.println(e.getClass().getName());
+		try(RandomAccessFile raf = new RandomAccessFile(file, "r")) {
+			// Get the file start (only to tell if this is the right format)
+			var buffer = new byte[START_SIZE_BYTES];
+			raf.read(buffer, 0, START_SIZE_BYTES);
+			if (buffer[0] == ID3[0] && buffer[1] == ID3[1] && buffer[2] == ID3[2]) {
+				var ctx = new TranslationContext();
+				var headerBuffer = new byte[HEADER_TOTAL_SIZE_BYTES];
+				raf.read(headerBuffer, 0, HEADER_TOTAL_SIZE_BYTES);
+				var header = buildHeader(headerBuffer, ctx);
+				if (header != null) {
+					long remaining = header.translatedSize();
+					boolean keepOn = readFrame(raf, ctx);
+					while (keepOn) {
+						try {
+							// Keep on until there are no more frames or we are past the total
+							//	declared size
+							keepOn = readFrame(raf, ctx) && (ctx.accumulated() < remaining);
+						} catch (Error e) {
+							e.printStackTrace();
+							System.err.println(e.getClass().getName());
+						}
 					}
+					ctx.solveYearCandidates();
+					ret = ctx.tagBuilder().build();
 				}
-				ctx.solveYearCandidates();
-				ret = ctx.tagBuilder().build();
 			}
 		}
 		return ret;
@@ -139,7 +142,7 @@ public class V2TagService {
 	 */
 	private static long translateSize(byte[] integerNumber, TranslationContext ctx)
 			throws SizeTranslationException {
-		long ret = translateSize(integerNumber);
+		var ret = translateSize(integerNumber);
 		if ((ret + ctx.accumulated()) > ctx.totalSize()) {
 			// Reached the padding
 			throw new SizeTranslationException();
@@ -159,27 +162,31 @@ public class V2TagService {
                 throw new SizeTranslationException();
             }
         }
-		long ret = 0;
+		var ret = 0L;
 		// Calculate the sizes shifting left as many positions as necessary
 		ret += integerNumber[3];
-		long size2 = integerNumber[2] << 7;
+		var size2 = integerNumber[2] << 7;
 		ret += size2;
-		long size1 = integerNumber[1] << 14;
+		var size1 = integerNumber[1] << 14;
 		ret += size1;
-		long size0 = integerNumber[0] << 21;
+		var size0 = integerNumber[0] << 21;
 		ret += size0;
 		return ret;
 	}
 
 	// Current frame may be any of the possible data types (title, artist, etc.)
-	private static void storeFrame(String id, V2Tag.Frame f, TranslationContext ctx) {
-		V2Tag.V2TagBuilder c = ctx.tagBuilder();
+	private static void storeFrame(
+		String id,
+		V2Tag.Frame f,
+		TranslationContext ctx
+	) {
+		var c = ctx.tagBuilder();
 		switch(id) {
 			case TITLE -> c.title(readField(f.body()));
 			case ARTIST -> c.artist(readField(f.body()));
 			case ORIGINAL_ARTIST -> c.originalArtist(readField(f.body()));
 			case "TDRC", "TDAT", "TIME", "TRDA", "TYER" -> 
-				ctx.yearCandidate(id, readField(f.body()));
+				ctx.addYearCandidate(id, readField(f.body()));
 			case COMMENTS -> c.comments(retrieveExtendedText(f.body()));
 			case COMPOSER -> c.composer(readField(f.body()));
 			case GENRE -> c.genre(readField(f.body()));
@@ -216,10 +223,10 @@ public class V2TagService {
 	private static V2Tag.Header buildHeader(byte[] buffer, TranslationContext ctx) {
 		V2Tag.Header ret;
 		try {
-			byte[] version = slice(buffer, INDEX_VERSION, SIZE_VERSION_BYTES);
-			byte[] flags = slice(buffer, INDEX_HEADER_FLAGS, SIZE_HEADER_FLAGS_BYTES);
-			byte[] size = slice(buffer, INDEX_HEADER_SIZE, SIZE_SIZE_BYTES);
-			long translatedSize = translateSize(size);
+			var version = slice(buffer, INDEX_VERSION, SIZE_VERSION_BYTES);
+			var flags = slice(buffer, INDEX_HEADER_FLAGS, SIZE_HEADER_FLAGS_BYTES);
+			var size = slice(buffer, INDEX_HEADER_SIZE, SIZE_SIZE_BYTES);
+			var translatedSize = translateSize(size);
 			ret = new V2Tag.Header(version, size, flags, translatedSize);
 			ctx.increaseTotalSize(translatedSize);
 		} catch (SizeTranslationException eep) {
@@ -233,31 +240,29 @@ public class V2TagService {
 	private static class TranslationContext {
 
 		// TDRC (recording time) consolidates TDAT (date), TIME (time), TRDA (recording dates), and TYER (year)
-		private Map<String, String> yearCandidates = new HashMap<>();
+		private final Map<String, String> yearCandidates = new HashMap<>();
 		
-		private long acumulado = 0;
+		private long accumulated = 0;
 
-		// Cuenta real del tama�o del encabezado (la suma de los tama�os
-		// de los frames no tiene por qu� corresponderse con el tama�o
-		// le�do en el encabezamiento, el programa que haya construido
-		// el frame puede haber metido alg�n relleno por comodidad).
+		// Actual size - whatever wrote the file may have included
+		//	padding for convenience and we need to take that into account
 		private long totalSize = 0;
 
-		private V2Tag.V2TagBuilder tagBuilder = V2Tag.builder();
+		private final V2Tag.V2TagBuilder tagBuilder = V2Tag.builder();
 
 		public TranslationContext() {}
 
 		public long accumulated() {
-			return acumulado;
+			return accumulated;
 		}
 		
-		public void yearCandidate(String campo, String valor) {
-			yearCandidates.put(campo, valor);
+		public void addYearCandidate(String field, String value) {
+			yearCandidates.put(field, value);
 		}
 		
 		public void solveYearCandidates() {
-			for (String campo: PRIORITY_YEAR_FIELDS) {
-				if (yearCandidates.containsKey(campo)) tagBuilder.year(yearCandidates.get(campo));
+			for (String field: PRIORITY_YEAR_FIELDS) {
+				if (yearCandidates.containsKey(field)) tagBuilder.year(yearCandidates.get(field));
 			}
 		}
 
@@ -269,14 +274,12 @@ public class V2TagService {
 			return tagBuilder;
 		}
 
-		public long incrementAccumulated(long cantidad) {
-			acumulado += cantidad;
-			return acumulado;
+		public void incrementAccumulated(long amount) {
+			accumulated += amount;
 		}
 
-		public long increaseTotalSize(long cantidad) {
+		public void increaseTotalSize(long cantidad) {
 			totalSize += cantidad;
-			return totalSize;
 		}
 	}
 }
