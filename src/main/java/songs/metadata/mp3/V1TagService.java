@@ -53,6 +53,10 @@ public class V1TagService {
         return ret;
     }
 
+    private static String nullIfEmpty(String s) {
+        return s.isEmpty() ? null : s;
+    }
+
     private static V1Tag read(byte[] tag) {
     	V1Tag ret = null;
         if (tag[0] == 'T' && tag[1] == 'A' && tag[2] == 'G') {
@@ -65,11 +69,11 @@ public class V1TagService {
             var genre = slice(tag, START_GENRE, SIZE_GENRE);
             Genre processedGenre = Genre.from(genre[0]);
             ret = new V1Tag(
-            	title,
-            	artist,
-            	album,
-            	year,
-            	comments,
+            	nullIfEmpty(title),
+                nullIfEmpty(artist),
+                nullIfEmpty(album),
+                nullIfEmpty(year),
+                nullIfEmpty(comments),
                 processedGenre
             );
         }

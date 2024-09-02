@@ -147,10 +147,23 @@ public record ASFTag(
     String album
 ) {
 
+    public static final ASFTag EMPTY = new ASFTag(
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null,
+        null
+    );
+
+    // Some programs are a bit confused about where to store the artist
     @Override
     public String artist() {
         if (artist != null && !artist.isEmpty()) return artist;
         else if (author != null && !author.isEmpty()) return author;
-        else return "";
+        else return null;
     }
 }

@@ -15,7 +15,17 @@ public record V2Tag(
 	String title
 ) {
 	
-	public static final V2Tag EMPTY = new V2Tag("", "", "", "", "", "", "", "", "");
+	public static final V2Tag EMPTY = new V2Tag(
+		null,
+		null,
+		null,
+		null,
+		null,
+		null,
+		null,
+		null,
+		null
+		);
 
 	public record Frame(
 		String id,

@@ -11,5 +11,12 @@ public record V1Tag(
     Genre genre
 ) {
 	
-	public static final V1Tag EMPTY = new V1Tag("", "", "", "", "", null);
+	public static final V1Tag EMPTY = new V1Tag(
+		null,
+		null,
+		null,
+		null,
+		null,
+		null
+	);
 }

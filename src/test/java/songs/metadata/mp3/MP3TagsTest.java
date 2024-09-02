@@ -15,7 +15,7 @@ import static test.Sandbox.sandbox;
 public class MP3TagsTest {
 
     private void testV1(File f, String artist, String title) {
-        testV1(f, artist, title, "");
+        testV1(f, artist, title, null);
     }
 
     private void testV1(File f, String artist, String title, String year) {
