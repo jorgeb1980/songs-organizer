@@ -44,6 +44,12 @@ public class MP3File extends Song {
         build();
     }
 
+    public MP3File(File file, V1Tag v1Tag, V2Tag v2Tag) {
+        super(file);
+        this.v1Tag = v1Tag;
+        this.v2Tag = v2Tag;
+    }
+
     private void build() {
         createV1Tag();
         createV2Tag();

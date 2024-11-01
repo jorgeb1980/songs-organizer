@@ -15,8 +15,8 @@ public record AudioFrameHeader(
 ) {
 	private static final BigDecimal MIL = new BigDecimal(1000);
 	
-	// Intenta construir una cabecera a partir de 32 bits
-	public static AudioFrameHeader construir(byte[] buffer) {
+	// Tries to build a header out of the first 32 bits
+	public static AudioFrameHeader build(byte[] buffer) {
 		if (buffer.length != 4) return null;
 		
 		// Bits 0 - 10 - start mark
