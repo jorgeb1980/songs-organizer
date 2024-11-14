@@ -9,11 +9,14 @@ public abstract class Song {
 
     protected String absolutePath = null;
     protected String fileName = null;
-    
+
+    public Song() {
+        this(null);
+    }
+
     public Song(File f) {
         super();
         if (f != null) {
-		    // Ruta y nombre de f
 		    absolutePath = f.getAbsolutePath();
 		    fileName = f.getName();
         }

@@ -1,10 +1,16 @@
 package songs.index;
 
-import songs.index.models.Collection;
+import songs.files.Song;
+import songs.index.models.Album;
+import songs.index.models.Artist;
 
-import java.io.File;
+import java.util.List;
 
 public interface Index {
 
-    Collection createCollection(File f);
+    List<Song> anonymousSongs();
+    List<Artist> artists();
+    List<Album> anonymousAlbums();
+
+    void indexSong(Song s);
 }
