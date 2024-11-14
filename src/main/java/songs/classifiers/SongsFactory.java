@@ -13,7 +13,7 @@ public class SongsFactory {
     private static List<SongsClassifier> classifiers = getSongClassifiers();
 
     private static List<SongsClassifier> getSongClassifiers() {
-        Reflections reflections = new Reflections(SongsFactory.class.getPackageName());
+        var reflections = new Reflections(SongsFactory.class.getPackageName());
         Set<Class<? extends SongsClassifier>> classes = reflections.getSubTypesOf(SongsClassifier.class);
         return classes.stream().map(c -> buildClassifier(c)).toList();
     }
@@ -28,7 +28,7 @@ public class SongsFactory {
     }
 
     public static Song song(File f) {
-        List<Song> songs = classifiers.stream().map(c -> c.classify(f)).filter(Objects::nonNull).toList();
+        var songs = classifiers.stream().map(c -> c.classify(f)).filter(Objects::nonNull).toList();
         return switch(songs.size()) {
             case 0 -> null;
             case 1 -> songs.getFirst();

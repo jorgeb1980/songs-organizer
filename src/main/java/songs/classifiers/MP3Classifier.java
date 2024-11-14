@@ -5,8 +5,6 @@ import songs.files.Song;
 import songs.metadata.mp3.V1TagService;
 import songs.metadata.mp3.V2TagService;
 import songs.metadata.mp3.frames.models.AudioFrameHeader;
-import songs.metadata.mp3.models.V1Tag;
-import songs.metadata.mp3.models.V2Tag;
 
 import java.io.File;
 import java.io.RandomAccessFile;
@@ -21,13 +19,11 @@ public class MP3Classifier implements SongsClassifier {
     public Song classify(File f) {
         Song ret = null;
         try {
-            V2Tag tag2 = V2TagService.buildTag(f);
-            V1Tag tag1 = V1TagService.buildTag(f);
-            if (tag1 != null || tag2 != null) {
-                ret = new MP3File(f, tag1, tag2);
-            }
-            if (ret == null) {
-                try (RandomAccessFile bis = new RandomAccessFile(f, "r")) {
+            var tag2 = V2TagService.buildTag(f);
+            var tag1 = V1TagService.buildTag(f);
+            if (tag1 != null || tag2 != null) ret = new MP3File(f, tag1, tag2);
+            else {
+                try (var bis = new RandomAccessFile(f, "r")) {
                     // Apply a heuristic method - if a valid MP3 frame is not found in the first BUFFER_SIZE bytes, then
                     //  we decide it is not an MP3 file
                     var bufferRecon = new byte[BUFFER_SIZE];
@@ -49,9 +45,7 @@ public class MP3Classifier implements SongsClassifier {
                     - If you find another sync word after seeking, then the file is mostly an MP3 file.
                     - To be sure, repeat the process to find N consecutive MP3 frames. N can be increased for a better hit-rate.
                     */
-                    if (lookForFirstFrames(test)) {
-                        ret = new MP3File(f);
-                    }
+                    if (lookForFirstFrames(test)) ret = new MP3File(f);
                 }
             }
         } catch (Exception e) {
@@ -63,8 +57,8 @@ public class MP3Classifier implements SongsClassifier {
     }
 
     private boolean lookForFirstFrames(byte[] buffer) throws Exception {
-        int hits = 0;
-        int i = 0;
+        var hits = 0;
+        var i = 0;
         while (i < buffer.length - 3) {
             // Look for the synchronization word
             if (
@@ -72,7 +66,7 @@ public class MP3Classifier implements SongsClassifier {
                     &&
                     (buffer[i + 1] & 0xE0) == 0xE0
             ) {
-                AudioFrameHeader header = AudioFrameHeader.build(copyOfRange(buffer, i, i + 4));
+                var header = AudioFrameHeader.build(copyOfRange(buffer, i, i + 4));
                 int frameSizeBytes = header.frameSizeBits() / 8;
                 i += frameSizeBytes;
                 hits++;

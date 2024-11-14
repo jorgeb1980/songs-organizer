@@ -10,17 +10,17 @@ public abstract class Song {
     protected String absolutePath = null;
     protected String fileName = null;
     
-    public Song(File fichero) {
+    public Song(File f) {
         super();
-        if (fichero != null) {
-		    // Ruta y nombre de fichero
-		    absolutePath = fichero.getAbsolutePath();
-		    fileName = fichero.getName();
+        if (f != null) {
+		    // Ruta y nombre de f
+		    absolutePath = f.getAbsolutePath();
+		    fileName = f.getName();
         }
     }
     
     public String toString() {
-        StringBuilder sb = new StringBuilder();
+        var sb = new StringBuilder();
         if (!artist().isEmpty() && !title().isEmpty()) {
             // artist - title
             sb.append(artist());
@@ -35,7 +35,6 @@ public abstract class Song {
             // just the file name
             sb.append(absolutePath);
         }
-        // Devolver el buffer
         return sb.toString();
     }
 
