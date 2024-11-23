@@ -9,12 +9,12 @@ import java.io.RandomAccessFile;
 
 import static java.nio.charset.StandardCharsets.ISO_8859_1;
 import static songs.files.Utils.slice;
-import static songs.metadata.mp3.Constants.SIZE_ALBUM;
-import static songs.metadata.mp3.Constants.SIZE_ARTIST;
-import static songs.metadata.mp3.Constants.SIZE_COMMENTS;
-import static songs.metadata.mp3.Constants.SIZE_GENRE;
-import static songs.metadata.mp3.Constants.SIZE_TITLE;
-import static songs.metadata.mp3.Constants.SIZE_YEAR;
+import static songs.metadata.mp3.Constants.SIZE_ALBUM_BYTES;
+import static songs.metadata.mp3.Constants.SIZE_ARTIST_BYTES;
+import static songs.metadata.mp3.Constants.SIZE_COMMENTS_BYTES;
+import static songs.metadata.mp3.Constants.SIZE_GENRE_BYTES;
+import static songs.metadata.mp3.Constants.SIZE_TITLE_BYTES;
+import static songs.metadata.mp3.Constants.SIZE_YEAR_BYTES;
 import static songs.metadata.mp3.Constants.START_ALBUM;
 import static songs.metadata.mp3.Constants.START_ARTIST;
 import static songs.metadata.mp3.Constants.START_COMMENTS;
@@ -61,12 +61,12 @@ public class V1TagService {
     	V1Tag ret = null;
         if (tag[0] == 'T' && tag[1] == 'A' && tag[2] == 'G') {
             // V1 Tag
-            var title = decodeAndTrim(slice(tag, START_TITLE, SIZE_TITLE), ISO_8859_1);
-            var artist = decodeAndTrim(slice(tag, START_ARTIST, SIZE_ARTIST), ISO_8859_1);
-            var album = decodeAndTrim(slice(tag, START_ALBUM, SIZE_ALBUM), ISO_8859_1);
-            var year = decodeAndTrim(slice(tag, START_YEAR, SIZE_YEAR), ISO_8859_1);
-            var comments = decodeAndTrim(slice(tag, START_COMMENTS, SIZE_COMMENTS), ISO_8859_1);
-            var genre = slice(tag, START_GENRE, SIZE_GENRE);
+            var title = decodeAndTrim(slice(tag, START_TITLE, SIZE_TITLE_BYTES), ISO_8859_1);
+            var artist = decodeAndTrim(slice(tag, START_ARTIST, SIZE_ARTIST_BYTES), ISO_8859_1);
+            var album = decodeAndTrim(slice(tag, START_ALBUM, SIZE_ALBUM_BYTES), ISO_8859_1);
+            var year = decodeAndTrim(slice(tag, START_YEAR, SIZE_YEAR_BYTES), ISO_8859_1);
+            var comments = decodeAndTrim(slice(tag, START_COMMENTS, SIZE_COMMENTS_BYTES), ISO_8859_1);
+            var genre = slice(tag, START_GENRE, SIZE_GENRE_BYTES);
             Genre processedGenre = Genre.from(genre[0]);
             ret = new V1Tag(
             	nullIfEmpty(title),

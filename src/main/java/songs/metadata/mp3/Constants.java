@@ -3,12 +3,12 @@ package songs.metadata.mp3;
 public interface Constants {
 
     // Fixed sizes for the expected fields in a V1 tag
-    int SIZE_TITLE = 30;
-    int SIZE_ARTIST = 30;
-    int SIZE_ALBUM = 30;
-    int SIZE_YEAR = 4;
-    int SIZE_COMMENTS = 30;
-    int SIZE_GENRE = 1;
+    int SIZE_TITLE_BYTES = 30;
+    int SIZE_ARTIST_BYTES = 30;
+    int SIZE_ALBUM_BYTES = 30;
+    int SIZE_YEAR_BYTES = 4;
+    int SIZE_COMMENTS_BYTES = 30;
+    int SIZE_GENRE_BYTES = 1;
     // Offsets for each expected field inside the V1 tag
     int START_TITLE = 3;
     int START_ARTIST = 33;

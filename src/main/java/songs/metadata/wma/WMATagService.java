@@ -47,8 +47,8 @@ public class WMATagService {
 	        if (areEqual(buffer, ID_HEADER)) {
 	        	raf.seek(0);
 	        	var identifier = new byte[LENGTH_IDENTIFIER_BYTES];
-		        var tamFichero = raf.length();
-		        while (!foundData && ctx.nextObject() < tamFichero) {
+		        var fileSize = raf.length();
+		        while (!foundData && ctx.nextObject() < fileSize) {
 		            readIdentifier(raf, ctx.nextObject(), identifier);
 		            if (areEqual(identifier, ID_DATA_OBJECT)) {
 						// we are done
@@ -83,7 +83,7 @@ public class WMATagService {
         var numDescriptors = readInteger(raf, LENGTH_INFO_SIZE_FIELD_BYTES);
         var map = new HashMap<String, Object>();
         for (int i = 0; i < numDescriptors; i++) readDescriptor(raf, map);
-        ASFTag.ASFTagBuilder c = ctx.builder();
+        var c = ctx.builder();
         for (String key: map.keySet())
         	switch(key) {
 	        	case WM_ALBUM -> c.album((String) map.get(key));
@@ -160,9 +160,9 @@ public class WMATagService {
         if (readBytes == lengthInBytes) {
             ret = 0;
             for (int i = 0; i < lengthInBytes; i++) {
-                int valor = integer[i] & 0xFF;
+                int value = integer[i] & 0xFF;
                 // Accumulate the value (remembering it is little endian)
-                ret += (valor * (int) Math.pow(256, i));
+                ret += (value * (int) Math.pow(256, i));
             }            
         }
         return ret;

@@ -57,7 +57,7 @@ public class V2TagService {
 
 	public static V2Tag buildTag(File file) throws IOException {
 		V2Tag ret = null;
-		try(RandomAccessFile raf = new RandomAccessFile(file, "r")) {
+		try(var raf = new RandomAccessFile(file, "r")) {
 			// Get the file start (only to tell if this is the right format)
 			var buffer = new byte[START_SIZE_BYTES];
 			raf.read(buffer, 0, START_SIZE_BYTES);
@@ -73,7 +73,7 @@ public class V2TagService {
 						try {
 							// Keep on until there are no more frames or we are past the total
 							//	declared size
-							keepOn = readFrame(raf, ctx) && (ctx.accumulated() < remaining);
+							keepOn = readFrame(raf, ctx) && (ctx.accumulatedBytes() < remaining);
 						} catch (Error e) {
 							e.printStackTrace();
 							System.err.println(e.getClass().getName());
@@ -98,7 +98,7 @@ public class V2TagService {
 	 * 
 	 */
 	private static boolean readFrame(RandomAccessFile raf, TranslationContext ctx) throws IOException {
-		boolean ret = false;
+		var ret = false;
 		try {
 			var buffer = new byte[HEADER_FRAME_SIZE_BYTES];
 			var read = raf.read(buffer, 0, HEADER_FRAME_SIZE_BYTES);
@@ -111,7 +111,7 @@ public class V2TagService {
 					var translatedSize = translateSize(size, ctx);
 					// Flags
 					var flags = slice(buffer, IND_FLAGS_FRAME, FRAME_FLAGS_SIZE_BYTES);
-					ctx.incrementAccumulated(translatedSize);
+					ctx.incrementAccumulatedBy(translatedSize);
                     byte[] body = null;
 					if (translatedSize > 0) {
 						var tmp = new byte[(int) (translatedSize)];
@@ -121,7 +121,7 @@ public class V2TagService {
 					var f = new V2Tag.Frame(new String(id), size, translatedSize, flags, body);
 					storeFrame(f.id(), f, ctx);
 					// Update total size in the translation context
-					ctx.increaseTotalSize(HEADER_FRAME_SIZE_BYTES + translatedSize);
+					ctx.increaseTotalSizeBy(HEADER_FRAME_SIZE_BYTES + translatedSize);
 				}
 			}
 		} catch (SizeTranslationException eep) {
@@ -143,7 +143,7 @@ public class V2TagService {
 	private static long translateSize(byte[] integerNumber, TranslationContext ctx)
 			throws SizeTranslationException {
 		var ret = translateSize(integerNumber);
-		if ((ret + ctx.accumulated()) > ctx.totalSize()) {
+		if ((ret + ctx.accumulatedBytes()) > ctx.totalSizeBytes()) {
 			// Reached the padding
 			throw new SizeTranslationException();
 		}
@@ -157,7 +157,7 @@ public class V2TagService {
 	 * @return The size of some field as a long integer
 	 */
 	private static long translateSize(byte[] integerNumber) throws SizeTranslationException {
-        for (byte b : integerNumber) {
+        for (var b : integerNumber) {
             if ((b & MASK) != 0) {
                 throw new SizeTranslationException();
             }
@@ -199,17 +199,15 @@ public class V2TagService {
 	 * Is the current identifier a valid one or have we read padding trash
 	 * from the end of the tag?
 	 *
-	 * @param buffer May be a header
+	 * @param buffer Maybe a header
 	 * @return True if the buffer checks to be a valid header
 	 */
 	private static boolean isValidTag(byte[] buffer) {
 		boolean ret = true;
-		// Recorrer los 4 caracteres mirando si son v�lidos o no
 		int i = 0;
 		while (ret && i < SIZE_ID_BYTES) {
 			ret = ret && (('a' <= buffer[i] && buffer[i] <= 'z') || ('A' <= buffer[i] && buffer[i] <= 'Z')
 				|| ('0' <= buffer[i] && buffer[i] <= '9'));
-			// Puntero
 			i++;
 		}
 		return ret;
@@ -228,7 +226,7 @@ public class V2TagService {
 			var size = slice(buffer, INDEX_HEADER_SIZE, SIZE_SIZE_BYTES);
 			var translatedSize = translateSize(size);
 			ret = new V2Tag.Header(version, size, flags, translatedSize);
-			ctx.increaseTotalSize(translatedSize);
+			ctx.increaseTotalSizeBy(translatedSize);
 		} catch (SizeTranslationException eep) {
 			// We have reached the padding
 			ret = null;
@@ -236,24 +234,23 @@ public class V2TagService {
 		return ret;
 	}
 
-	// All amounts are bytes
 	private static class TranslationContext {
 
 		// TDRC (recording time) consolidates TDAT (date), TIME (time), TRDA (recording dates), and TYER (year)
 		private final Map<String, String> yearCandidates = new HashMap<>();
 		
-		private long accumulated = 0;
+		private long accumulatedBytes = 0;
 
 		// Actual size - whatever wrote the file may have included
 		//	padding for convenience and we need to take that into account
-		private long totalSize = 0;
+		private long totalSizeBytes = 0;
 
 		private final V2Tag.V2TagBuilder tagBuilder = V2Tag.builder();
 
 		public TranslationContext() {}
 
-		public long accumulated() {
-			return accumulated;
+		public long accumulatedBytes() {
+			return accumulatedBytes;
 		}
 		
 		public void addYearCandidate(String field, String value) {
@@ -266,20 +263,20 @@ public class V2TagService {
 			}
 		}
 
-		public long totalSize() {
-			return totalSize;
+		public long totalSizeBytes() {
+			return totalSizeBytes;
 		}
 
 		public V2Tag.V2TagBuilder tagBuilder() {
 			return tagBuilder;
 		}
 
-		public void incrementAccumulated(long amount) {
-			accumulated += amount;
+		public void incrementAccumulatedBy(long bytes) {
+			accumulatedBytes += bytes;
 		}
 
-		public void increaseTotalSize(long cantidad) {
-			totalSize += cantidad;
+		public void increaseTotalSizeBy(long bytes) {
+			totalSizeBytes += bytes;
 		}
 	}
 }

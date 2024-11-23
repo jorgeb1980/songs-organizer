@@ -7,7 +7,7 @@ public class ASFUtils {
      * @return True if the bytes (as unsigned) have the same value as the integers
      */
     public static boolean areEqual(byte[] byteArray, int[] integerArray) {
-        boolean ret = true;
+        var ret = true;
         if (byteArray.length != integerArray.length) {
             ret = false;
         }
