@@ -8,6 +8,7 @@
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <cli.library.version>1.10.0</cli.library.version>
+        <test.library.version>2.0.0-SNAPSHOT</test.library.version>
         <java.compiler.version>21</java.compiler.version>
     </properties>
     <build>
@@ -81,7 +82,7 @@
         <dependency>
             <groupId>test</groupId>
             <artifactId>utils</artifactId>
-            <version>1.0.1</version>
+            <version>${test.library.version}</version>
             <scope>test</scope>
         </dependency>
     </dependencies>

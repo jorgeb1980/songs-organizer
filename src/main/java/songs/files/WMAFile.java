@@ -25,11 +25,11 @@ public class WMAFile extends Song {
     }
     
     public String artist() {
-        return tag.artist();
+        return tag().artist();
     }
     
     public String title() {
-        return tag.title();
+        return tag().title();
     }
 
     public String originalArtist() {
@@ -37,31 +37,31 @@ public class WMAFile extends Song {
     }
 
     public String album() {
-        return tag.album();
+        return tag().album();
     }
 
     public String year() {
-        return tag.year();
+        return tag().year();
     }
 
     public String composer() {
-        return tag.composer();
+        return tag().composer();
     }
 
     public String comments() {
-        return tag.description();
+        return tag().description();
     }
 
     public String genre() {
-        return tag.genre();
+        return tag().genre();
     }
 
     public String trackNumber() {
-        return tag.trackNumber();
+        return tag().trackNumber();
     }
 
     public String author() {
-        return tag.author();
+        return tag().author();
     }
     
 }
